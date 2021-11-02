@@ -1,7 +1,7 @@
 import React from "react";
 
-export default function Grades(props) {
-  const grades = props.grades.map((grade, index) => {
+export default function Stats(props) {
+  const stats = props.stats.map((grade, index) => {
     return (
       <li key={index} className="row grade">
         <div>Test {index + 1}</div>
@@ -10,6 +10,6 @@ export default function Grades(props) {
     )
   });
   return (
-    <ul className="margin-top-1">{grades}</ul>
+    <ul className="margin-top-1">{stats}</ul>
   );
 }

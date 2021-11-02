@@ -38,19 +38,51 @@ export default class PokemonPage extends React.Component {
   }
 
   componentDidMount() {
-    fetch('https://pokeapi.co/api/v2/pokemon')
-      .then(response => response.json())
-      .then(data => {
-        pokemonList = data.results;
-        pokemonList.forEach(async pokemon => {
-          pokemonData = await fetch(pokemon.url)
-        })
-        this.buildNameMap();
-        this.setState({
-          pokemon: cloneDeep(pokemonData),
-          isLoading: false
+    this.fetchPokemonList()
+    .then(data => {
+      data.forEach(pokemon => {
+        console.log(pokemon);
+        const { id, name, stats, types } = pokemon;
+        pokemonData.push({ id, name, stats, types,
+          url: pokemon.sprites.other['official-artwork'].front_default
         });
       });
+
+      this.buildNameMap();
+      this.setState({
+        pokemon: cloneDeep(pokemonData),
+        isLoading: false
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+    });
+  }
+
+  async fetchPokemonList() {
+    let response = await fetch('https://pokeapi.co/api/v2/pokemon');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    let data = await response.json();
+
+    let pokemonFetches = [];
+    data.results.forEach(pokemon => {
+      pokemonFetches.push(this.fetchPokemon(pokemon.url));
+    });
+
+    let values = await Promise.all(pokemonFetches);
+    return values;
+  }
+
+  async fetchPokemon(url) {
+    let response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    let data = await response.json();
+    return data;
   }
 
   buildNameMap() {
@@ -63,10 +95,6 @@ export default class PokemonPage extends React.Component {
   handleChange(event) {
     const key = event.target.name;
     const value = event.target.value;
-
-    console.log('handleChange');
-    console.log('key', key);
-    console.log('value', value);
 
     let nameSet;
     if (key === 'name' && value === '') {

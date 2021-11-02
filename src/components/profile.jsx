@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
-import Grades from './grades';
+import Stats from './stats';
 import Tags from './tags';
 
 
 export default function Profile(props) {
   const [expand, setExpand] = useState(0);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput] = useState('');
 
-  const average = props.student.grades.reduce((acc, curr) => acc + parseInt(curr), 0)/props.student.grades.length;
-  let name = props.student.firstName + ' ' + props.student.lastName;
-  name = name.toUpperCase();
+  const { id, name, stats, tags, url } = props.pokemon;
+  console.log(name);
 
   const handleChange = (event) => {
     setExpand(!expand);
@@ -23,8 +22,8 @@ export default function Profile(props) {
 
   const handleTag = (event) => {
     if(event.keyCode === 13) {
-      props.addTag(tagInput, props.student.id);
-      setTagInput("");
+      props.addTag(tagInput, id);
+      setTagInput('');
     }
   }
 
@@ -32,33 +31,15 @@ export default function Profile(props) {
     <div className="row space-between">
       <div className="row align-center">
         <div className="student-pic">
-          <img src={props.student.pic} alt="Student Head shot"></img>
+          <img src={url} alt="Student Head shot"></img>
         </div>
         <div>
-          <div className="student-name">
-            <h1>{name}</h1>
+          <div className="pokemon-name">
+            <h1>{name.toUpperCase()}</h1>
           </div>
-          <div className="student-details">
-            <div>
-              Email: {props.student.email}
-            </div>
-            <div>
-              Company: {props.student.company}
-            </div>
-            <div>
-              Skill: {props.student.skill}
-            </div>
-            <div>
-              Average: {average}%
-            </div>
-            { expand
-              ? <Grades grades={props.student.grades} />
-              : <></>
-            }
-            { props.student.tags
-              ? <Tags tags={props.student.tags} />
-              : <></>
-            }
+          <div className="pokemon-details">
+            { expand && <Stats stats={stats} /> }
+            { tags && <Tags tags={tags} /> }
             <input type="text" name={tagInput} value={tagInput}
               placeholder="Add a tag" onChange={handleInput} onKeyUp={handleTag} />
           </div>
