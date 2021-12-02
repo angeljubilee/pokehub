@@ -5,13 +5,12 @@
     Value is an array of student data (name or tag could be used twice).
 
   nameMap, tagMap structure:
-  i: {
-       ingaberg: [studentData...]
-       iban: [studentData...]
+  p: {
+       poliwag: [pokemonData...]
      }
 */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Search from '../components/search';
 import { cloneDeep } from 'lodash';
 import { addToMap, search } from '../lib/searchMap';
@@ -20,25 +19,15 @@ import PokemonList from '../components/pokemonList';
 let nameMap = {};
 let tagMap = {};
 let pokemonData = [];
-let pokemonList = [];
 
-export default class PokemonPage extends React.Component {
-  constructor(props) {
-    super(props);
+export default function PokemonPage (props) {
+  const [pokemon, setPokemon] = useState([]);
+  const [isLoading, setLoading] = useState(true);
+  const [name, setName] = useState('');
+  const [tag, setTag] = useState('');
 
-    this.state = {
-      pokemon: [],
-      isLoading: true,
-      name: '',
-      tag: '',
-    }
-
-    this.handleChange = this.handleChange.bind(this);
-    this.addTag = this.addTag.bind(this);
-  }
-
-  componentDidMount() {
-    this.fetchPokemonList()
+  useEffect(() => {
+    fetchPokemonList()
     .then(data => {
       data.forEach(pokemon => {
         console.log(pokemon);
@@ -48,18 +37,17 @@ export default class PokemonPage extends React.Component {
         });
       });
 
-      this.buildNameMap();
-      this.setState({
-        pokemon: cloneDeep(pokemonData),
-        isLoading: false
-      });
+      buildNameMap();
+      setPokemon(pokemonData);
+      setLoading(false);
     })
     .catch((e) => {
       console.error(e);
     });
-  }
+  // eslint-disable-next-line
+  }, []);
 
-  async fetchPokemonList() {
+  const fetchPokemonList = async () => {
     let response = await fetch('https://pokeapi.co/api/v2/pokemon');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -68,14 +56,14 @@ export default class PokemonPage extends React.Component {
 
     let pokemonFetches = [];
     data.results.forEach(pokemon => {
-      pokemonFetches.push(this.fetchPokemon(pokemon.url));
+      pokemonFetches.push(fetchPokemon(pokemon.url));
     });
 
     let values = await Promise.all(pokemonFetches);
     return values;
   }
 
-  async fetchPokemon(url) {
+  const fetchPokemon = async (url) => {
     let response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -85,14 +73,14 @@ export default class PokemonPage extends React.Component {
     return data;
   }
 
-  buildNameMap() {
+  const buildNameMap = () => {
     pokemonData.forEach(pokemon => {
       const name = pokemon.name.toLowerCase();
       addToMap(nameMap, name, pokemon);
     });
   }
 
-  handleChange(event) {
+  const handleChange = (event) =>  {
     const key = event.target.name;
     const value = event.target.value;
 
@@ -101,8 +89,8 @@ export default class PokemonPage extends React.Component {
       nameSet = new Set(pokemonData);
     } else if (key === 'name') {
       nameSet = search(nameMap, value);
-    } else if (this.state.name) {
-      nameSet = search(nameMap, this.state.name);
+    } else if (name) {
+      nameSet = search(nameMap, name);
     }
 
     let tagSet;
@@ -110,8 +98,8 @@ export default class PokemonPage extends React.Component {
       tagSet = new Set(pokemonData);
     } else if (key === 'tag') {
       tagSet = search(tagMap, value);
-    } else if (this.state.tag) {
-      tagSet = search(tagMap, this.state.tag)
+    } else if (tag) {
+      tagSet = search(tagMap,tag)
     }
 
     let pokemon;
@@ -124,15 +112,19 @@ export default class PokemonPage extends React.Component {
     }
 
     if (pokemon) {
-      this.setState({ pokemon: cloneDeep(Array.from(pokemon)) })
+      setPokemon(cloneDeep(Array.from(pokemon)));
     } else {
-      this.setState({ pokemon: cloneDeep(pokemonData) });
+      setPokemon(cloneDeep(pokemonData));
     }
 
-    this.setState({ [key]: value });
+    if (key === 'name') {
+      setName(value);
+    } else if (key === 'tag') {
+      setTag(value);
+    }
   }
 
-  addTag(tag, pokemonId) {
+  const addTag = (tag, pokemonId) => {
     const pokemon = pokemonData.find(pokemon => pokemon.id === pokemonId);
 
     addToMap(tagMap, tag.toLowerCase(), pokemon);
@@ -143,30 +135,28 @@ export default class PokemonPage extends React.Component {
       pokemon.tags.push(tag);
     }
 
-    const newPokemonData = this.state.pokemon.map(s => {
+    const newPokemonData = pokemon.map(s => {
       if (s.id === pokemonId) {
         let newPokemon = cloneDeep(pokemon);
         return newPokemon;
       }
       return s;
     });
-    this.setState({ pokemon: newPokemonData });
+    setPokemon(newPokemonData);
   }
 
-  render() {
-    return (
-      this.state.isLoading
-      ? <div>Loading pokemon Page</div>
-      : <div className="container">
-          <div className="pokemon-list scroll-hide">
-            <Search handleChange={this.handleChange}
-              value={this.state.name} type="name"/>
-            <Search handleChange={this.handleChange}
-              value={this.state.tag} type="tag" />
-            <PokemonList pokemon={this.state.pokemon}
-              addTag={this.addTag}/>
-          </div>
+  return (
+    isLoading
+    ? <div>Loading pokemon Page</div>
+    : <div className="container">
+        <div className="pokemon-list scroll-hide">
+          <Search handleChange={handleChange}
+            value={name} type="name"/>
+          <Search handleChange={handleChange}
+            value={tag} type="tag" />
+          <PokemonList pokemon={pokemon}
+            addTag={addTag}/>
         </div>
-    );
-  }
+      </div>
+  );
 }
